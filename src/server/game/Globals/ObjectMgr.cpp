@@ -217,7 +217,7 @@ bool normalizePlayerName(std::string& name)
     if (!Utf8toWStr(name, tmp))
         return false;
 
-    wstrToLower(tmp);
+    //Aldori wstrToLower(tmp);
     if (!tmp.empty())
         tmp[0] = wcharToUpper(tmp[0]);
 
@@ -8656,15 +8656,15 @@ uint8 ObjectMgr::CheckPlayerName(std::string_view name, bool create)
         return CHAR_NAME_TOO_SHORT;
 
     // Check for mixed languages
-    uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
+    /*uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
     if (!isValidString(wname, strictMask, false, create))
-        return CHAR_NAME_MIXED_LANGUAGES;
+        return CHAR_NAME_MIXED_LANGUAGES;*/
 
     // Check for three consecutive letters
     wstrToLower(wname);
-    for (std::size_t i = 2; i < wname.size(); ++i)
+    /*for (std::size_t i = 2; i < wname.size(); ++i)
         if (wname[i] == wname[i - 1] && wname[i] == wname[i - 2])
-            return CHAR_NAME_THREE_CONSECUTIVE;
+            return CHAR_NAME_THREE_CONSECUTIVE;*/
 
     // Check Reserved Name
     if (sObjectMgr->IsReservedName(name))
