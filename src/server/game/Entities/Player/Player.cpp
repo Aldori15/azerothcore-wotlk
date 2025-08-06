@@ -2573,10 +2573,14 @@ void Player::InitTalentForLevel()
 
     // xinef: more talent points that we have are used, reset
     if (m_usedTalentCount > talentPointsForLevel)
-        resetTalents(true);
+    {
+        // resetTalents(true);  // Aldori
+    }
     // xinef: else, recalculate free talent points count
     else
+    {
         SetFreeTalentPoints(talentPointsForLevel - m_usedTalentCount);
+    }
 
     if (!GetSession()->PlayerLoading())
         SendTalentsInfoData(false);                         // update at client
