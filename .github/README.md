@@ -47,6 +47,8 @@ We have a lot of modules already made by the community, many of which can be fou
 
 ## Installation
 
+This is a fork of liyunfan1223's `azerothcore-wotlk` Playerbot tree.  With that being said, you will also need to install liyunfan1223's `mod-playerbots` module [here](https://github.com/liyunfan1223/mod-playerbots) for this to work properly.
+
 Detailed installation instructions are available [here](http://www.azerothcore.org/wiki/installation).
 
 ## Contributing
