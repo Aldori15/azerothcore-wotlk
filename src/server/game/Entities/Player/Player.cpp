@@ -13562,25 +13562,45 @@ LootItem* Player::StoreLootItem(uint8 lootSlot, Loot* loot, InventoryResult& msg
         return nullptr;
     }
 
-    ItemPosCountVec dest;
-    msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count);
-    if (msg == EQUIP_ERR_OK)
-    {
-        AllowedLooterSet looters = item->GetAllowedLooters();
-        Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomPropertyId, looters);
+    bool useQuestKeyringStorage = GetSession()
+        && !GetSession()->IsBot()
+        && sConfigMgr->GetOption<bool>("QuestLootToKeyring.Enabled", false)
+        && (qitem || HasQuestForItem(item->itemid));
 
-        if (qitem)
+    // For real players, prefer storing quest loot in keyring slots so bag slots are not consumed.
+    if (useQuestKeyringStorage)
+    {
+        ItemPosCountVec keyringDest;
+        uint32 remainingCount = item->count;
+        InventoryResult keyringMsg = EQUIP_ERR_OK;
+
+        if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(item->itemid))
         {
-            qitem->is_looted = true;
-            //freeforall is 1 if everyone's supposed to get the quest item.
-            if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
-                SendNotifyLootItemRemoved(lootSlot);
-            else
-                loot->NotifyQuestItemRemoved(qitem->index);
+            uint32 keyringSize = GetMaxKeyringSize();
+
+            // First merge into existing keyring stacks, then use free keyring slots.
+            keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, true, nullptr, NULL_BAG, NULL_SLOT);
+            if (keyringMsg == EQUIP_ERR_OK && remainingCount > 0)
+                keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, false, nullptr, NULL_BAG, NULL_SLOT);
         }
         else
+            keyringMsg = EQUIP_ERR_ITEM_NOT_FOUND;
+
+        if (keyringMsg == EQUIP_ERR_OK && remainingCount == 0 && !keyringDest.empty())
         {
-            if (ffaitem)
+            AllowedLooterSet looters = item->GetAllowedLooters();
+            Item* newitem = StoreNewItem(keyringDest, item->itemid, true, item->randomPropertyId, looters);
+
+            if (qitem)
+            {
+                qitem->is_looted = true;
+                //freeforall is 1 if everyone's supposed to get the quest item.
+                if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
+                    SendNotifyLootItemRemoved(lootSlot);
+                else
+                    loot->NotifyQuestItemRemoved(qitem->index);
+            }
+            else if (ffaitem)
             {
                 //freeforall case, notify only one player of the removal
                 ffaitem->is_looted = true;
@@ -13593,26 +13613,76 @@ LootItem* Player::StoreLootItem(uint8 lootSlot, Loot* loot, InventoryResult& msg
                     conditem->is_looted = true;
                 loot->NotifyItemRemoved(lootSlot);
             }
+
+            //if only one person is supposed to loot the item, then set it to looted
+            if (!item->freeforall)
+                item->is_looted = true;
+
+            --loot->unlootedCount;
+
+            SendNewItem(newitem, uint32(item->count), false, false, true);
+            UpdateLootAchievements(item, loot);
+
+            // LootItem is being removed (looted) from the container, delete it from the DB.
+            if (loot->containerGUID)
+                sLootItemStorage->RemoveStoredLootItem(loot->containerGUID, item->itemid, item->count, loot, item->itemIndex);
+
+            sScriptMgr->OnPlayerLootItem(this, newitem, item->count, this->GetLootGUID());
+            return item;
         }
-
-        //if only one person is supposed to loot the item, then set it to looted
-        if (!item->freeforall)
-            item->is_looted = true;
-
-        --loot->unlootedCount;
-
-        SendNewItem(newitem, uint32(item->count), false, false, true);
-        UpdateLootAchievements(item, loot);
-
-        // LootItem is being removed (looted) from the container, delete it from the DB.
-        if (loot->containerGUID)
-            sLootItemStorage->RemoveStoredLootItem(loot->containerGUID, item->itemid, item->count, loot, item->itemIndex);
-
-        sScriptMgr->OnPlayerLootItem(this, newitem, item->count, this->GetLootGUID());
     }
-    else
+
+    // Fallback to normal storage behavior (bots always use this path).
     {
-        SendEquipError(msg, nullptr, nullptr, item->itemid);
+        ItemPosCountVec dest;
+        msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count);
+        if (msg == EQUIP_ERR_OK)
+        {
+            AllowedLooterSet looters = item->GetAllowedLooters();
+            Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomPropertyId, looters);
+
+            if (qitem)
+            {
+                qitem->is_looted = true;
+                //freeforall is 1 if everyone's supposed to get the quest item.
+                if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
+                    SendNotifyLootItemRemoved(lootSlot);
+                else
+                    loot->NotifyQuestItemRemoved(qitem->index);
+            }
+            else if (ffaitem)
+            {
+                //freeforall case, notify only one player of the removal
+                ffaitem->is_looted = true;
+                SendNotifyLootItemRemoved(lootSlot);
+            }
+            else
+            {
+                //not freeforall, notify everyone
+                if (conditem)
+                    conditem->is_looted = true;
+                loot->NotifyItemRemoved(lootSlot);
+            }
+
+            //if only one person is supposed to loot the item, then set it to looted
+            if (!item->freeforall)
+                item->is_looted = true;
+
+            --loot->unlootedCount;
+
+            SendNewItem(newitem, uint32(item->count), false, false, true);
+            UpdateLootAchievements(item, loot);
+
+            // LootItem is being removed (looted) from the container, delete it from the DB.
+            if (loot->containerGUID)
+                sLootItemStorage->RemoveStoredLootItem(loot->containerGUID, item->itemid, item->count, loot, item->itemIndex);
+
+            sScriptMgr->OnPlayerLootItem(this, newitem, item->count, this->GetLootGUID());
+        }
+        else
+        {
+            SendEquipError(msg, nullptr, nullptr, item->itemid);
+        }
     }
 
     return item;

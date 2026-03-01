@@ -16,6 +16,7 @@
  */
 
 #include "CreatureAI.h"
+#include "Config.h"
 #include "DisableMgr.h"
 #include "GameEventMgr.h"
 #include "GameObjectAI.h"
@@ -279,6 +280,28 @@ bool Player::CanAddQuest(Quest const* quest, bool msg)
             return true;
         else if (msg2 != EQUIP_ERR_OK)
         {
+            bool canStoreInKeyring = false;
+            if (GetSession() && !GetSession()->IsBot() && sConfigMgr->GetOption<bool>("QuestLootToKeyring.Enabled", false))
+            {
+                if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(srcitem))
+                {
+                    if (itemTemplate->Bonding == BIND_QUEST_ITEM || itemTemplate->Class == ITEM_CLASS_QUEST)
+                    {
+                        ItemPosCountVec keyringDest;
+                        uint32 remainingCount = count;
+                        uint32 keyringSize = GetMaxKeyringSize();
+                        InventoryResult keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, true, nullptr, NULL_BAG, NULL_SLOT);
+                        if (keyringMsg == EQUIP_ERR_OK && remainingCount > 0)
+                            keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, false, nullptr, NULL_BAG, NULL_SLOT);
+
+                        canStoreInKeyring = (keyringMsg == EQUIP_ERR_OK && remainingCount == 0 && !keyringDest.empty());
+                    }
+                }
+            }
+
+            if (canStoreInKeyring)
+                return true;
+
             SendEquipError(msg2, nullptr, nullptr, srcitem);
             PlayDirectSound(QUEST_SOUND_FAILURE, this); // Play failure sound
             return false;
@@ -1377,17 +1400,42 @@ bool Player::GiveQuestSourceItem(Quest const* quest)
 
         ItemPosCountVec dest;
         InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, srcitem, count);
+        // player already have max amount required item, just report success
+        if (msg == EQUIP_ERR_CANT_CARRY_MORE_OF_THIS)
+            return true;
+
+        // Prefer keyring when configured, then fall back to normal bag storage.
+        if (GetSession() && !GetSession()->IsBot() && sConfigMgr->GetOption<bool>("QuestLootToKeyring.Enabled", false))
+        {
+            if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(srcitem))
+            {
+                if (itemTemplate->Bonding == BIND_QUEST_ITEM || itemTemplate->Class == ITEM_CLASS_QUEST)
+                {
+                    ItemPosCountVec keyringDest;
+                    uint32 remainingCount = count;
+                    uint32 keyringSize = GetMaxKeyringSize();
+                    InventoryResult keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, true, nullptr, NULL_BAG, NULL_SLOT);
+                    if (keyringMsg == EQUIP_ERR_OK && remainingCount > 0)
+                        keyringMsg = CanStoreItem_InInventorySlots(KEYRING_SLOT_START, KEYRING_SLOT_START + keyringSize, keyringDest, itemTemplate, remainingCount, false, nullptr, NULL_BAG, NULL_SLOT);
+
+                    if (keyringMsg == EQUIP_ERR_OK && remainingCount == 0 && !keyringDest.empty())
+                    {
+                        Item* item = StoreNewItem(keyringDest, srcitem, true);
+                        SendNewItem(item, count, true, false);
+                        return true;
+                    }
+                }
+            }
+        }
+
         if (msg == EQUIP_ERR_OK)
         {
             Item* item = StoreNewItem(dest, srcitem, true);
             SendNewItem(item, count, true, false);
             return true;
         }
-            // player already have max amount required item, just report success
-        else if (msg == EQUIP_ERR_CANT_CARRY_MORE_OF_THIS)
-            return true;
-        else
-            SendEquipError(msg, nullptr, nullptr, srcitem);
+
+        SendEquipError(msg, nullptr, nullptr, srcitem);
         return false;
     }
 
@@ -1890,8 +1938,17 @@ void Player::ItemAddedQuestCheck(uint32 entry, uint32 count)
                 uint16 curitemcount = q_status.ItemCount[j];
                 if (curitemcount < reqitemcount)
                 {
-                    q_status.ItemCount[j] = std::min<uint16>(q_status.ItemCount[j] + count, reqitemcount);
-                    m_QuestStatusSave[questid] = true;
+                    uint16 newItemCount = std::min<uint16>(curitemcount + count, reqitemcount);
+                    if (newItemCount != curitemcount)
+                    {
+                        q_status.ItemCount[j] = newItemCount;
+                        m_QuestStatusSave[questid] = true;
+
+                        uint16 log_slot = FindQuestSlot(questid);
+                        if (log_slot < MAX_QUEST_LOG_SIZE)
+                            SetQuestSlotCounter(log_slot, j, newItemCount);
+
+                    }
                 }
                 if (CanCompleteQuest(questid))
                     CompleteQuest(questid);
@@ -1936,6 +1993,11 @@ void Player::ItemRemovedQuestCheck(uint32 entry, uint32 count)
                 {
                     q_status.ItemCount[j] = newItemCount;
                     m_QuestStatusSave[questid] = true;
+
+                    uint16 log_slot = FindQuestSlot(questid);
+                    if (log_slot < MAX_QUEST_LOG_SIZE)
+                        SetQuestSlotCounter(log_slot, j, newItemCount);
+
                     IncompleteQuest(questid);
                 }
             }

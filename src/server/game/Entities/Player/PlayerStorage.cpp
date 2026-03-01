@@ -953,9 +953,22 @@ InventoryResult Player::CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, ItemP
     {
         if (bag == INVENTORY_SLOT_BAG_0)
         {
-            // keyring case
-            if (slot >= KEYRING_SLOT_START && slot < KEYRING_SLOT_START + GetMaxKeyringSize() && !(pProto->BagFamily & BAG_FAMILY_MASK_KEYS))
-                return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
+            // keyring case Aldori
+            if (slot >= KEYRING_SLOT_START && slot < KEYRING_SLOT_START + GetMaxKeyringSize())
+            {
+                bool canUseKeyring = (pProto->BagFamily & BAG_FAMILY_MASK_KEYS) != 0;
+
+                if (!canUseKeyring && GetSession() && !GetSession()->IsBot() && sConfigMgr->GetOption<bool>("QuestLootToKeyring.Enabled", false))
+                {
+                    // Custom behavior: allow player quest items to persist in keyring slots.
+                    canUseKeyring = pProto->Bonding == BIND_QUEST_ITEM
+                        || pProto->Class == ITEM_CLASS_QUEST
+                        || HasQuestForItem(pProto->ItemId, 0, true);
+                }
+
+                if (!canUseKeyring)
+                    return EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG;
+            }
 
             // currencytoken case
             if (slot >= CURRENCYTOKEN_SLOT_START && slot < CURRENCYTOKEN_SLOT_END && !(pProto->IsCurrencyToken()))
