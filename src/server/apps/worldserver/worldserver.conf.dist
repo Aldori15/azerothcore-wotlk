@@ -4619,6 +4619,15 @@ MunchingBlizzlike.Enabled = 1
 
 Daze.Enabled = 1
 
+# Quest Loot to Keyring
+#     Description: Puts eligible quest loot into keyring slots instead of your main bags.
+#                  This helps save bag space while questing.
+#                  0 = Off (default behavior)
+#                  1 = On  (use keyring for eligible quest loot)
+#     Default:     0
+
+QuestLootToKeyring.Enabled = 0
+
 #
 #    InfiniteAmmo.Enabled
 #        Description: Enable or disable ammo consumption for ranged attacks and thrown weapons.
