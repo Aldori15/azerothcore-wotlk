@@ -3105,8 +3105,12 @@ void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool 
     ItemAddedQuestCheck(pItem->GetEntry(), pItem->GetCount());
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_RECEIVE_EPIC_ITEM, pItem->GetEntry(), pItem->GetCount());
 
+    uint32 movedCount = pItem ? pItem->GetCount() : 0;
+    
     // store item
     Item* pLastItem = StoreItem(dest, pItem, update);
+    if (pLastItem)
+        sScriptMgr->OnPlayerStoreNewItem(this, pLastItem, movedCount);
 
     // only set if not merged to existed stack (pItem can be deleted already but we can compare pointers any way)
     if (pLastItem == pItem)
