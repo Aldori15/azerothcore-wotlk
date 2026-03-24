@@ -1674,7 +1674,14 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object* questgiver)
         QuestStatus status = GetQuestStatus(questId);
         if (status == QUEST_STATUS_COMPLETE && !GetQuestRewardStatus(questId))
         {
-            result2 = DIALOG_STATUS_REWARD;
+            if (quest->IsDailyOrWeekly() || quest->IsMonthly())
+            {
+                result2 = DIALOG_STATUS_REWARD_REP;
+            }
+            else
+            {
+                result2 = DIALOG_STATUS_REWARD;
+            }
         }
         else if (status == QUEST_STATUS_INCOMPLETE)
         {
@@ -1715,7 +1722,7 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object* questgiver)
 
                     if (quest->IsRepeatable())
                     {
-                        if (quest->IsDaily())
+                        if (quest->IsDailyOrWeekly() || quest->IsMonthly())
                         {
                             if (isNotLowLevelQuest)
                             {
@@ -1724,17 +1731,6 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object* questgiver)
                             else
                             {
                                 result2 = DIALOG_STATUS_LOW_LEVEL_AVAILABLE_REP;
-                            }
-                        }
-                        else if (quest->IsWeekly() || quest->IsMonthly())
-                        {
-                            if (isNotLowLevelQuest)
-                            {
-                                result2 = DIALOG_STATUS_AVAILABLE;
-                            }
-                            else
-                            {
-                                result2 = DIALOG_STATUS_LOW_LEVEL_AVAILABLE;
                             }
                         }
                         else if (quest->IsAutoComplete())
