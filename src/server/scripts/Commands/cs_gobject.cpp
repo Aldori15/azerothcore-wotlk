@@ -28,6 +28,7 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "PoolMgr.h"
+#include "RBAC.h"
 #include "Transport.h"
 #include <unordered_set>
 
