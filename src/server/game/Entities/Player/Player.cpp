@@ -2550,9 +2550,13 @@ void Player::InitTalentForLevel()
     if (m_usedTalentCount > talentPointsForLevel)
     {
         if (!GetSession()->HasPermission(rbac::RBAC_PERM_SKIP_CHECK_MORE_TALENTS_THAN_ALLOWED))
+        {
             // resetTalents(true); // Aldori
+        }
         else
+        {
             SetFreeTalentPoints(0);
+        }
     }
     // else update amount of free points
     else
