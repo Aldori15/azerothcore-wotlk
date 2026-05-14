@@ -269,7 +269,7 @@ public:
         uint32 playerCount = sWorldSessionMgr->GetPlayerCount();
         uint32 activeSessionCount = sWorldSessionMgr->GetActiveSessionCount();
         uint32 queuedSessionCount = sWorldSessionMgr->GetQueuedSessionCount();
-        uint32 connPeak = sWorldSessionMgr->GetMaxActiveSessionCount();
+        // uint32 connPeak = sWorldSessionMgr->GetMaxActiveSessionCount();
 
         handler->PSendSysMessage("{}", GitRevision::GetFullVersion());
         if (!queuedSessionCount)
