@@ -32,7 +32,7 @@ void ScriptMgr::OnPlayerGossipSelect(Player* player, uint32 menu_id, uint32 send
     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_GOSSIP_SELECT, script->OnPlayerGossipSelect(player, menu_id, sender, action));
 }
 
-void ScriptMgr::OnPlayerGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code)
+void ScriptMgr::OnPlayerGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, char const* code)
 {
     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_GOSSIP_SELECT_CODE, script->OnPlayerGossipSelectCode(player, menu_id, sender, action, code));
 }
@@ -778,7 +778,7 @@ bool ScriptMgr::OnPlayerNotSetArenaTeamInfoField(Player* player, uint8 slot, Are
     CALL_ENABLED_BOOLEAN_HOOKS(PlayerScript, PLAYERHOOK_NOT_SET_ARENA_TEAM_INFO_FIELD, !script->OnPlayerNotSetArenaTeamInfoField(player, slot, type, value));
 }
 
-bool ScriptMgr::OnPlayerCanJoinLfg(Player* player, uint8 roles, lfg::LfgDungeonSet& dungeons, const std::string& comment)
+bool ScriptMgr::OnPlayerCanJoinLfg(Player* player, uint8 roles, lfg::LfgDungeonSet& dungeons, std::string const& comment)
 {
     CALL_ENABLED_BOOLEAN_HOOKS(PlayerScript, PLAYERHOOK_CAN_JOIN_LFG, !script->OnPlayerCanJoinLfg(player, roles, dungeons, comment));
 }
@@ -965,7 +965,7 @@ void ScriptMgr::OnPlayerTargetChanged(Player* player, Unit* oldTarget, Unit* new
     CALL_ENABLED_HOOKS(PlayerScript, PLAYERHOOK_ON_TARGET_CHANGED, script->OnPlayerTargetChanged(player, oldTarget, newTarget));
 }
 
-PlayerScript::PlayerScript(const char* name, std::vector<uint16> enabledHooks)
+PlayerScript::PlayerScript(char const* name, std::vector<uint16> enabledHooks)
     : ScriptObject(name, PLAYERHOOK_END)
 {
     // If empty - enable all available hooks.
