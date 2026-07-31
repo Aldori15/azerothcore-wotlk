@@ -108,6 +108,11 @@ jobs:
           }
           "OPENSSL_ROOT_DIR=$opensslRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Using OpenSSL at $opensslRoot"
+      - name: Disable private Custom scripts
+        shell: bash
+        run: |
+          echo 'set(SCRIPTS_CUSTOM "disabled" CACHE STRING "" FORCE)' >> conf/config.cmake
+      
       - name: Build
         shell: bash
         run: |

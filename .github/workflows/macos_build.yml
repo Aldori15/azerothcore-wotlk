@@ -62,6 +62,11 @@ jobs:
         shell: bash
         run: source ./acore.sh install-deps
 
+      - name: Disable private Custom scripts
+        shell: bash
+        run: |
+          echo 'set(SCRIPTS_CUSTOM "disabled" CACHE STRING "" FORCE)' >> conf/config.cmake
+
       - name: Build
         shell: bash
         run: source ./apps/ci/mac/ci-compile.sh
