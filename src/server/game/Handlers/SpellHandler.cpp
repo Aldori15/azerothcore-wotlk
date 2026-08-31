@@ -643,8 +643,14 @@ void WorldSession::HandleCancelGrowthAuraOpcode(WorldPacket& /*recvPacket*/)
 
 void WorldSession::HandleCancelAutoRepeatSpellOpcode(WorldPacket& /*recvPacket*/)
 {
-    // may be better send SMSG_CANCEL_AUTO_REPEAT?
-    // cancel and prepare for deleting
+    // The 3.3.5a client cancels Auto Shot when movement begins.
+    // Allow Hunter Auto Shot (spell 75) to continue while moving.
+    if (Spell* spell = _player->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL))
+    {
+        if (spell->GetSpellInfo()->Id == 75 && _player->isMoving())
+            return;
+    }
+
     _player->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
 }
 
