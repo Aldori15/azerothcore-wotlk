@@ -1340,7 +1340,17 @@ enum Opcodes : uint16
     SMSG_MULTIPLE_MOVES                             = 0x51E, // uncompressed version of SMSG_COMPRESSED_MOVES
     TC9_CMSG_PREPARE_FOR_REDIRECT                   = 0x51F,
     TC9_SMSG_READY_FOR_REDIRECT                     = 0x520,
-    NUM_MSG_TYPES                                   = 0x521
+
+    // 0x521 - 0x5FF reserved for future core/custom expansion
+
+    // custom WXL opcodes
+    WXL_CMSG_QUEST_TRACKER_REQUEST                  = 0x600,
+    WXL_SMSG_QUEST_TRACKER_MARKER                   = 0x601,
+    WXL_SMSG_QUEST_TRACKER_KILL_ENTRIES             = 0x602,
+    WXL_SMSG_QUEST_TRACKER_CORPSE                   = 0x603,
+
+    // NUM_MSG_TYPES                                   = 0x521
+    NUM_MSG_TYPES                                   = 0x604
 };
 
 enum OpcodeMisc : uint16
