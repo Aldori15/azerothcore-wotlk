@@ -1003,9 +1003,9 @@ void Player::UpdateWeaponSkill(Unit* victim, WeaponAttackType attType, Item* ite
     uint32 weapon_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_WEAPON);
 
     Item* tmpitem = GetWeaponForAttack(attType, true);
-    if (item && item != tmpitem && !item->IsBroken())
+    if (item && item != tmpitem)
     {
-        tmpitem = item;
+        return;
     }
 
     if (!tmpitem && attType == BASE_ATTACK)
