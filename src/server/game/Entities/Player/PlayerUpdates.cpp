@@ -27,6 +27,7 @@
 #include "Guild.h"
 #include "InstanceScript.h"
 #include "Language.h"
+#include "Log.h"
 #include "OutdoorPvPMgr.h"
 #include "Pet.h"
 #include "Player.h"
